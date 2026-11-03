@@ -1,0 +1,9 @@
+[filter_local]
+host-suffix, goblin.hupu.com, direct
+
+[rewrite_local]
+# QX 直接返回空 JSON 字典通常足以阻断此类广告等待
+^https?:\/\/goblin\.hupu\.com\/\d+\/[\d.]+\/interfaceAd\/getOther url reject-dict
+
+[mitm]
+hostname = goblin.hupu.com
