@@ -1,13 +1,5 @@
-#修改自匿名网友的LOON代码，侵删。
-
-[filter_local]
-# 让广告域名直连，避免走代理浪费流量或被拦截导致卡顿
-host-suffix, goblin.hupu.com, direct
-
-[rewrite_local]
-# 虎扑开屏不白屏：返回本地或远程 mock 的空广告 JSON
+# 虎扑开屏不白屏：返回本地 mock 的空广告 JSON
 ^https?:\/\/goblin\.hupu\.com\/\d+\/[\d.]+\/interfaceAd\/getOther url script-echo-response https://raw.githubusercontent.com/hjj0529/QuanX/refs/heads/main/js/hupu_mock.js
 
-[mitm]
 # 必须配置 MITM 才能对该域名的 HTTPS 流量进行解密和重写
 hostname = goblin.hupu.com
