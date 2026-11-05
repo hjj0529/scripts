@@ -1,0 +1,52 @@
+#!name=Spotify 去广告 (QuanX)
+#!desc=去除 Spotify 音频/首页/搜索/滚动广告，并解锁部分 Premium 功能（音质不能设为超高）。启用后退出 Spotify 重新登录再生效。
+#!author=devchristian1337（原作） / quietmodem（QuanX 转换）
+#!homepage=https://github.com/devchristian1337/loon-plugins
+#!arg=
+# ============================================================
+# 来源声明（请勿删除，防侵权争议）
+# 原作者：devchristian1337（https://github.com/devchristian1337）
+# 原项目：https://github.com/devchristian1337/loon-plugins
+# 原插件：Plugins/Spotify.lpx，介绍页 https://loon-plugins.vercel.app/zh/plugins/spotify
+# 原项目 README 声明许可：MIT License
+# 本文件由 quietmodem 将原 Loon 插件转换为 Quantumult X 版本，仅做了语法与
+# 脚本读写方式的适配，核心逻辑未改动；这不是原作者的官方 QuanX 版本，
+# 原作者未参与、未背书。仅供个人学习自用，与 Spotify 公司无关。
+# 如原作者认为侵权，请提 issue / 联系删除，将及时处理。
+# ============================================================
+# 开关说明（QuanX 没有 Loon 的插件开关，靠注释行控制，默认与原插件一致）：
+# - 远程配置修改（默认关）：默认启用下面“本地版” proto 脚本；想用远程版，
+#   把本地版那行注释掉、远程版那行取消注释，两行只能开一行。
+# - 隐藏发现信息流 / 会员信息 / AI DJ（默认全开）：不想隐藏就注释对应 reject-dict 行。
+# - 原插件的两条规则 QuanX 重写里放不了，见本文件末尾注释，需手动加。
+
+# gabo 上报接口本地回空 200
+^https:\/\/(.*-spclient\.spotify\.com(:443)?|spclient\.wg\.spotify\.com)\/gabo-receiver-service url script-echo-response https://raw.githubusercontent.com/quietmodem/scripts/refs/heads/main/quanx/rewrite/spotify/js/spot-gabo.qx.js
+# 删 customize 请求的 If-None-Match，避免 304 让 proto 补丁不执行（等价于原插件 header-del）
+^https:\/\/(spclient\.wg\.spotify\.com|.*-spclient\.spotify\.com(:443)?)\/user-customization-service\/v1\/customize url script-request-header https://raw.githubusercontent.com/quietmodem/scripts/refs/heads/main/quanx/rewrite/spotify/js/spot-del-etag.qx.js
+
+^https:\/\/(spclient\.wg|.*-spclient)\.spotify\.com(:443)?\/pendragon url reject-dict
+# 隐藏发现信息流（默认开）
+^https:\/\/(?:spclient\.wg|[\w-]+-spclient)\.spotify\.com(?::443)?\/watch-feed-entrypoints\/v\d\/discovery-from-seed url reject-dict
+# 隐藏会员信息（默认开）
+^https:\/\/[\w-]+-spclient\.spotify\.com(?::443)?\/pam-view-service\/ url reject-dict
+# 隐藏 AI DJ（默认开）
+37i9dQZF1EYkqdzj48dyYq url reject-dict
+
+# 去广告脚本（QuanX 适配版，在本仓库 quanx/rewrite/spotify/js/ 下）
+^https:\/\/(spclient\.wg\.spotify\.com|.*-spclient\.spotify\.com(:443)?)\/browsita\/v.\/browse url script-response-body https://raw.githubusercontent.com/quietmodem/scripts/refs/heads/main/quanx/rewrite/spotify/js/spot-NoSearchAd.qx.js
+^https:\/\/(spclient\.wg\.spotify\.com|.*-spclient\.spotify\.com(:443)?)\/casita\/v.\/home\/ url script-response-body https://raw.githubusercontent.com/quietmodem/scripts/refs/heads/main/quanx/rewrite/spotify/js/spot-NoHomeAd.qx.js
+^https:\/\/(spclient\.wg\.spotify\.com|.*-spclient\.spotify\.com(:443)?)\/scrollsita\/v.\/scroll\/spotify url script-response-body https://raw.githubusercontent.com/quietmodem/scripts/refs/heads/main/quanx/rewrite/spotify/js/spot-NoScrollAd.qx.js
+
+# Premium 补丁：原脚本本身已兼容 QuanX，故仍直接引用原作者仓库（未复制、便于跟随上游更新）
+# 本地版（默认）
+^https:\/\/(spclient\.wg\.spotify\.com|.*-spclient\.spotify\.com(:443)?)\/(bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize)(\?.*)?$ url script-response-body https://raw.githubusercontent.com/devchristian1337/loon-plugins/refs/heads/main/Scripts/Spotify/spot-proto-ev3.js
+# 远程版（要用就取消下面这行注释，并注释掉上面本地版那行）
+;^https:\/\/(spclient\.wg\.spotify\.com|.*-spclient\.spotify\.com(:443)?)\/(bootstrap\/v1\/bootstrap|user-customization-service\/v1\/customize)(\?.*)?$ url script-response-body https://raw.githubusercontent.com/devchristian1337/loon-plugins/refs/heads/main/Scripts/Spotify/spot-proto-eevee.js
+
+hostname = spclient.wg.spotify.com, *spclient.spotify.com
+
+# 需手动加到 QuanX 配置其他段落的两条（对应原插件的 [Rule]，重写订阅带不了）：
+# 1) [filter_local] 加：host, aet.spotify.com, reject
+# 2) [general] 可选加：udp_drop_list = QUIC（QuanX 不能按域名拦 QUIC，只能全局丢弃；
+#    已有 udp_drop_list 时把 QUIC 追加进去，不要新起一行）
